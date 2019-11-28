@@ -379,6 +379,43 @@ if (variant.typeName() == "QColor") {
 
 83. Qt中的QString和const char *之间转换，最好用toStdString().c_str()而不是toLocal8Bit().constData()，比如在setProperty中如果用后者，字符串中文就会不正确，英文正常。
 
+84. Qt的信号槽机制非常牛逼，也是Qt的独特的核心功能之一，有时候我们在很多窗体中传递信号来实现更新或者处理，如果窗体层级比较多，比如窗体A的父类是窗体B，窗体B的父类是窗体C，窗体C有个子窗体D，如果窗体A一个信号要传递给窗体D，问题来了，必须先经过窗体B中转到窗体C再到窗体D才行，这样的话各种信号关联信号的connect会非常多而且管理起来比较乱，可以考虑增加一个全局的单例类AppEvent，公共的信号放这里，然后窗体A对应信号绑定到AppEvent，窗体D绑定AppEvent的信号到对应的槽函数即可，干净清爽整洁。
+
+85. QTextEdit右键菜单默认英文的，如果想要中文显示，加载widgets.qm文件即可，一个Qt程序中可以安装多个翻译文件，不冲突。
+
+86. Qt中有个全局的焦点切换信号focusChanged，可以用它做自定义的输入法。Qt4中默认会安装输入法上下文，比如在main函数打印a.inputContext会显示值，这个默认安装的输入法上下文，会拦截两个牛逼的信号QEvent::RequestSoftwareInputPanel和QEvent::CloseSoftwareInputPanel，以至于就算你安装了全局的事件过滤器依然识别不到这两个信号，你只需要在main函数执行a.setInputContext(0)即可，意思是安装输入法上下文为空。
+
+87. 在Qt5.10以后，表格控件QTableWidget或者QTableView的默认最小列宽改成了15，以前的版本是0，所以在新版的qt中，如果设置表格的列宽过小，不会应用，取的是最小的列宽。所以如果要设置更小的列宽需要重新设置ui->tableView->horizontalHeader()->setMinimumSectionSize(0);
+
+88. Qt源码中内置了一些未公开的不能直接使用的黑科技，都藏在对应模块的private中，比如gui-private widgets-private等，比如zip文件解压类QZipReader、压缩类QZipWriter就在gui-private模块中，需要在pro中引入QT += gui-private才能使用。
+``` c++
+#include "QtGui/private/qzipreader_p.h"
+#include "QtGui/private/qzipwriter_p.h"
+
+QZipReader reader(dirPath);
+QString path("");
+//解压文件夹到当前目录
+reader.extractAll(path);
+//文件夹名称
+QZipReader::FileInfo fileInfo = reader.entryInfoAt(0);
+//解压文件
+QFile file(filePath);
+file.open(QIODevice::WriteOnly);
+file.write(reader.fileData(QString::fromLocal8Bit("%1").arg(filePath)));
+file.close();
+reader.close();
+
+QZipWriter *writer = new QZipWriter(dirPath);
+//添加文件夹
+writer->addDirectory(unCompress);
+//添加文件
+QFile file(filePath);
+file.open(QIODevice::ReadOnly);
+writer->addFile(data, file.readAll());
+file.close();
+writer->close();
+```
+
 93. 不要怀疑这部分被狗吃了，^_^中间部分待更新，会持续更新。也欢迎各位在文章底部留言加进去。
 
 94. Qt界的中文乱码问题，版本众多导致的如何选择安装包问题，如何打包发布程序的问题，堪称Qt界的三座大山！
@@ -421,5 +458,5 @@ if (variant.typeName() == "QColor") {
 |Qt国内镜像下载地址|[https://mirrors.cloud.tencent.com/qt](https://mirrors.cloud.tencent.com/qt)|
 
 ### 三、其他
-1. Qt入门书籍推荐霍亚飞的《Qt Creator快速入门》《Qt5编程入门》，Qt进阶书籍推荐官方的《C++ GUI Qt4编程》。
+1. Qt入门书籍推荐霍亚飞的《Qt Creator快速入门》，Qt进阶书籍推荐官方的《C++ GUI Qt4编程》，qml书籍推荐《Qt5编程入门》。
 2. 强烈推荐程序员自我修养和规划系列书《大话程序员》《程序员的成长课》《解忧程序员》，受益匪浅，受益终生！
