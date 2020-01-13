@@ -431,7 +431,7 @@ writer->close();
 #endif
 ```
 
-93. 不要怀疑这部分被狗吃了，^_^中间部分待更新，会持续更新。也欢迎各位在文章底部留言加进去。
+93. Qt支持所有的界面控件比如QPushButton、QLineEdit自动关联 on_控件名_信号(参数) 信号槽，比如按钮的单击信号 on_pushButton_clicked()，然后直接实现槽函数即可。
 
 94. Qt界的中文乱码问题，版本众多导致的如何选择安装包问题，如何打包发布程序的问题，堪称Qt界的三座大山！
 
@@ -450,6 +450,8 @@ writer->close();
 ### 二、推荐的Qt论坛+个人博客+网站
 | 名称 | 网址 |
 | ------ | ------ |
+|QtWidget开源demo集合|[https://gitee.com/feiyangqingyun/QWidgetDemo](https://gitee.com/feiyangqingyun/QWidgetDemo)|
+|QtQuick/Qml开源demo集合|[https://gitee.com/jaredtao/TaoQuick](https://gitee.com/jaredtao/TaoQuick)|
 |qtcn|[http://www.qtcn.org](http://www.qtcn.org)|
 |豆子的空间|[https://www.devbean.net](https://www.devbean.net)|
 |yafeilinux|[http://www.qter.org](http://www.qter.org)|
