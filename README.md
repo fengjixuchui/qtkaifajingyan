@@ -12,8 +12,8 @@
 
 6. 可以在pro文件中写上标记版本号+ico图标（Qt5才支持）
 ``` c++
-VERSION     = 2018.7.25
-RC_ICONS    = main0.ico
+VERSION  = 2020.10.25
+RC_ICONS = main0.ico
 ```
 
 7. 管理员运行程序，限定在MSVC编译器。
@@ -282,12 +282,12 @@ CONFIG += resources_big
 - 方法二：改成继承QFrame，因为QFrame自带paintEvent函数已做了实现，在使用样式表时会进行解析和绘制。
 - 方法三：重新实现QWidget的paintEvent函数时，使用QStylePainter绘制。
 ``` c++
-void myclass::paintEvent(QPaintEvent *)
+void Widget::paintEvent(QPaintEvent *)
 {
-    QStyleOption o;
-    o.initFrom(this);
-    QPainter p(this);
-    style()->drawPrimitive(QStyle::PE_Widget, &o, &p, this);
+    QStyleOption option;
+    option.initFrom(this);
+    QPainter painter(this);
+    style()->drawPrimitive(QStyle::PE_Widget, &option, &painter, this);
 }
 ```
 
@@ -517,7 +517,39 @@ if (file.open(QFile::ReadOnly)) {
 }
 ```
 
-97. QSS文件不支持UTF8，切记不要在QtCreator中打开qss文件来编辑保存，这样很可能导致qss加载以后没有效果，你需要保存为ANSI格式。
+97. 用QFile.readAll()读取QSS文件默认是ANSI格式，不支持UTF8，如果在QtCreator中打开qss文件来编辑保存，这样很可能导致qss加载以后没有效果。
+```c++
+void frmMain::initStyle()
+{
+    //加载样式表
+    QString qss;
+    //QFile file(":/qss/psblack.css");
+    //QFile file(":/qss/flatwhite.css");
+    QFile file(":/qss/lightblue.css");
+    if (file.open(QFile::ReadOnly)) {
+#if 1
+        //用QTextStream读取样式文件不用区分文件编码 带bom也行
+        QStringList list;
+        QTextStream in(&file);
+        //in.setCodec("utf-8");
+        while (!in.atEnd()) {
+            QString line;
+            in >> line;
+            list << line;
+        }
+
+        qss = list.join("\n");
+#else
+        //用readAll读取默认支持的是ANSI格式,如果不小心用creator打开编辑过了很可能打不开
+        qss = QLatin1String(file.readAll());
+#endif
+        QString paletteColor = qss.mid(20, 7);
+        qApp->setPalette(QPalette(QColor(paletteColor)));
+        qApp->setStyleSheet(qss);
+        file.close();
+    }
+}
+```
 
 98. QString内置了很多转换函数，比如可以调用toDouble转为double数据，但是当你转完并打印的时候你会发现精确少了，只剩下三位了，其实原始数据还是完整的精确度的，只是打印的时候优化成了三位，如果要保证完整的精确度，可以调用 qSetRealNumberPrecision 函数设置精确度位数即可。
 ```c++
@@ -542,6 +574,78 @@ while (it.hasNext()) {
 101. 如果需要在尺寸改变的时候不重绘窗体，则设置属性即可 this->setAttribute(Qt::WA_StaticContents, true); 这样可以避免可以避免对已经显示区域的重新绘制。
 
 102. 默认程序中获取焦点以后会有虚边框，如果看着觉得碍眼不舒服可以去掉，设置样式即可：setStyleSheet("*{outline:0px;}");
+
+103. Qt表格控件一些常用的设置封装，QTableWidget继承自QTableView，所以下面这个函数支持传入QTableWidget。
+```c++
+void QUIHelper::initTableView(QTableView *tableView, int rowHeight, bool headVisible, bool edit)
+{
+    //奇数偶数行颜色交替
+    tableView->setAlternatingRowColors(false);
+    //垂直表头是否可见
+    tableView->verticalHeader()->setVisible(headVisible);
+    //选中一行表头是否加粗
+    tableView->horizontalHeader()->setHighlightSections(false);
+    //最后一行拉伸填充
+    tableView->horizontalHeader()->setStretchLastSection(true);
+    //行标题最小宽度尺寸
+    tableView->horizontalHeader()->setMinimumSectionSize(0);
+    //行标题最大高度
+    tableView->horizontalHeader()->setMaximumHeight(rowHeight);
+    //默认行高
+    tableView->verticalHeader()->setDefaultSectionSize(rowHeight);
+    //选中时一行整体选中
+    tableView->setSelectionBehavior(QAbstractItemView::SelectRows);
+    //只允许选择单个
+    tableView->setSelectionMode(QAbstractItemView::SingleSelection);
+
+    //表头不可单击
+#if (QT_VERSION > QT_VERSION_CHECK(5,0,0))
+    tableView->horizontalHeader()->setSectionsClickable(false);
+#else
+    tableView->horizontalHeader()->setClickable(false);
+#endif
+
+    //鼠标按下即进入编辑模式
+    if (edit) {
+        tableView->setEditTriggers(QAbstractItemView::CurrentChanged | QAbstractItemView::DoubleClicked);
+    } else {
+        tableView->setEditTriggers(QAbstractItemView::NoEditTriggers);
+    }
+}
+```
+
+104. 在一些大的项目中，可能嵌套了很多子项目，有时候会遇到子项目依赖其他子项目的时候，比如一部分子项目用来生成动态库，一部分子项目依赖这个动态库进行编译，此时就需要子项目按照顺序编译。
+```c++
+TEMPLATE = subdirs
+#设置ordered参数以后会依次编译 demo designer examples
+CONFIG  += ordered
+SUBDIRS += demo
+SUBDIRS += designer
+SUBDIRS += examples
+```
+
+105. MSVC编译器的选择说明
+- 如果是32位的Qt则编译器选择x86开头的
+- 如果是64位的Qt则编译器选择amd64开头的
+- 具体是看安装的Qt构建套件版本以及目标运行平台的系统位数和架构
+- 一般现在的电脑默认以64位的居多，选择amd64即可
+- 如果用户需要兼容32位的系统则建议选择32位的Qt，这样即可在32位也可以在64位系统运行
+- 诸葛大佬补充：x86/x64都是编译环境和运行环境相同，没有或。带下划线的就是交叉编译，前面是编译环境，后面是运行环境。
+
+| 名称 | 说明 |
+| ------ | ------ |
+|x86|32/64位系统上编译在32/64位系统上运行|
+|x86_amd64|32/64位系统上编译在64位系统上运行|
+|x86_arm|32/64位系统上编译在arm系统上运行|
+|amd64|64位系统上编译在64位系统上运行|
+|amd64_x86|64位系统上编译在32/64位系统上运行|
+|amd64_arm|64位系统上编译在arm系统上运行|
+
+106. 很多时候用QDialog的时候会发现阻塞了消息，而有的时候我们希望是后台的一些消息继续运行不要终止，此时需要做个设置。
+```c++
+QDialog dialog;
+dialog.setWindowModality(Qt::WindowModal);
+```
 
 ### 二、其他经验
 
