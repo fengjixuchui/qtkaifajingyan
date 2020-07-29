@@ -179,11 +179,37 @@ QMainWindow > .QWidget {
 
 ```
 
-32. 在pro中判断不同平台：message($$QT_ARCH) contains(QT_ARCH,arm)。
+32. 在pro中判断Qt版本及构建套件位数
+``` c++
+#打印版本信息
+message(qt version: $$QT_VERSION)
+#判断当前qt版本号
+QT_VERSION = $$[QT_VERSION]
+QT_VERSION = $$split(QT_VERSION, ".")
+QT_VER_MAJ = $$member(QT_VERSION, 0)
+QT_VER_MIN = $$member(QT_VERSION, 1)
+#下面是表示 Qt5.5
+greaterThan(QT_VER_MAJ, 4) {
+greaterThan(QT_VER_MIN, 4) {
+#自己根据需要做一些处理
+}
+}
+
+#QT_ARCH是Qt5新增的,在Qt4上没效果
+#打印当前Qt构建套件的信息
+message($$QT_ARCH)
+#表示arm平台构建套件
+contains(QT_ARCH, arm) {}
+#表示32位的构建套件
+contains(QT_ARCH, i386) {}
+#表示64位的构建套件
+contains(QT_ARCH, x86_64) {}
+```
 
 33. Qt最小化后恢复界面假死冻结，加上代码
 ``` c++
-void showEvent(QShowEvent *e){
+void showEvent(QShowEvent *e)
+{
 setAttribute(Qt::WA_Mapped);
 QWidget::showEvent(e);
 }
@@ -478,11 +504,13 @@ writer->close();
 94. QWebEngineView控件由于使用了opengl，在某些电脑上可能由于opengl的驱动过低会导致花屏或者各种奇奇怪怪的问题，比如showfullscreen的情况下鼠标右键失效，需要在main函数启用软件opengl渲染。
 ```c++
 #if (QT_VERSION > QT_VERSION_CHECK(5,4,0))
-    QCoreApplication::setAttribute(Qt::AA_UseSoftwareOpenGL);
+    //下面两种方法都可以,Qt默认采用的是AA_UseDesktopOpenGL
+    QCoreApplication::setAttribute(Qt::AA_UseOpenGLES);
+    //QCoreApplication::setAttribute(Qt::AA_UseSoftwareOpenGL);
 #endif
     QApplication a(argc, argv);
 ```
-另外一个方法解决 全屏+QWebEngineView控件一起会产生右键菜单无法弹出的BUG,需要上移一个像素
+另外一个方法解决 全屏+QWebEngineView控件一起会产生右键菜单无法弹出的bug,需要上移一个像素
 ```c++
 QRect rect = qApp->desktop()->geometry();
 rect.setY(-1);
@@ -647,6 +675,40 @@ QDialog dialog;
 dialog.setWindowModality(Qt::WindowModal);
 ```
 
+107. 很多初学者甚至几年工作经验的人，对多线程有很深的误解和滥用，尤其是在串口和网络通信这块，什么都往多线程里面丢，一旦遇到界面卡，就把数据收发啥的都搞到多线程里面去，殊不知绝大部分时候那根本没啥用，因为没找到出问题的根源。
+- 如果你没有使用wait***函数的话，大部分的界面卡都出在数据处理和展示中，比如传过来的是一张图片的数据，你需要将这些数据转成图片，这个肯定是耗时的；
+- 还有就是就收到的数据曲线绘制出来，如果过于频繁或者间隔过短，肯定会给UI造成很大的压力的，最好的办法是解决如何不要频繁绘制UI比如合并数据一起绘制等；
+- 如果是因为绘制UI造成的卡，那多线程也是没啥用的，因为UI只能在主线程；
+- 串口和网络的数据收发默认都是异步的，由操作系统调度的，如果数据处理复杂而且数据量大，你要做的是将数据处理放到多线程中；
+- 如果没有严格的数据同步需求，根本不需要调用wait***之类的函数来立即发送和接收数据，实际需求中大部分的应用场景其实异步收发数据就足够了；
+- 有严格数据同步需求的场景还是放到多线程会好一些，不然你wait***就卡在那边了；
+- 多线程是需要占用系统资源的，理论上来说，如果线程数量超过了CPU的核心数量，其实多线程调度可能花费的时间更多，各位在使用过程中要权衡利弊；
+
+108. 在嵌入式linux上，如果设置了无边框窗体，而该窗体中又有文本框之类的，发现没法产生焦点进行输入，此时需要主动激活窗体才行。
+```c++
+//这种方式设置的无边框窗体在嵌入式设备上无法产生焦点
+setWindowFlags(Qt::WindowStaysOnTopHint | Qt::FramelessWindowHint | Qt::X11BypassWindowManagerHint);
+
+//需要在show以后主动激活窗体
+w->show();
+w->activateWindow();
+```
+
+109. QString的replace函数会改变原字符串，切记，他在返回替换后的新字符串的同时也会改变原字符串，我的乖乖！
+
+110. QGraphicsEffect类的相关效果很炫，可以实现很多效果比如透明、渐变、阴影等，但是该类很耗CPU，如果不是特别需要一般不建议用，就算用也是要用在该部件后期不会发生频繁绘制的场景，不然会让你哭晕在厕所。
+
+111. 在不同的平台上文件路径的斜杠也是不一样的，比如linux系统一般都是 / 斜杠，而在windows上都是 \\ 两个反斜杠，Qt本身程序内部无论在win还是linux都支持 / 斜杠的路径，但是一些第三方库的话可能需要转换成对应系统的路径，这就需要用到斜杠转换，Qt当然内置类方法。
+```c++
+QString path = "C:/temp/test.txt";
+path = QDir::toNativeSeparators(path);
+//输出 C:\\temp\\test.txt
+
+QString path = "C:\\temp\\test.txt";
+path = QDir::toNativeSeparators(path);
+//输出 C:/temp/test.txt
+```
+
 ### 二、其他经验
 
 1. Qt界的中文乱码问题，版本众多导致的如何选择安装包问题，如何打包发布程序的问题，堪称Qt界的三座大山！
@@ -659,15 +721,16 @@ dialog.setWindowModality(Qt::WindowModal);
 
 5. 如果出现崩溃和段错误，80%都是因为要么越界，要么未初始化，死扣这两点，80%的问题解决了。
 
-6. Qt一共有几百个版本，关于如何选择Qt版本的问题，我一般保留四个版本，为了兼容Qt4用4.8.7，最后的支持XP的版本5.7.0，最新的长期支持版本比如5.12，最高的新版本比如5.14.2。强烈不建议使用5.0到5.3之间的版本，太多BUG和坑，稳定性和兼容性相比于之后的版本相当差，能换就换，不能换睡服领导也要换。
+6. Qt一共有几百个版本，关于如何选择Qt版本的问题，我一般保留四个版本，为了兼容Qt4用4.8.7，最后的支持XP的版本5.7.0，最新的长期支持版本比如5.12，最高的新版本比如5.14.2。强烈不建议使用5.0到5.3之间的版本，太多bug和坑，稳定性和兼容性相比于之后的版本相当差，能换就换，不能换睡服领导也要换。
 
 7. 终极秘籍：如果遇到问题搜索Qt方面找不到答案，试着将关键字用JAVA C# android打头，你会发现别有一番天地，其他人很可能做过！
 
 8. 最后一条：珍爱生命，远离编程。祝大家头发浓密，睡眠良好，情绪稳定，财富自由！
 
-### 三、推荐的Qt论坛+个人博客+网站
+### 三、推荐的Qt论坛+个人博客+网站+群
 | 名称 | 网址 |
 | ------ | ------ |
+|QQ学习群| Qt交流大会群 853086607 Qt技术交流群 46679801 Qt进阶之路群 734623697|
 |QtWidget开源demo集合|[https://gitee.com/feiyangqingyun/QWidgetDemo](https://gitee.com/feiyangqingyun/QWidgetDemo)|
 |QtQuick/Qml开源demo集合|[https://gitee.com/jaredtao/TaoQuick](https://gitee.com/jaredtao/TaoQuick)|
 |qtcn|[http://www.qtcn.org](http://www.qtcn.org)|
@@ -700,5 +763,6 @@ dialog.setWindowModality(Qt::WindowModal);
 |漂亮界面网站|[https://www.ui.cn/](https://www.ui.cn/)|
 
 ### 三、其他
-1. Qt入门书籍推荐霍亚飞的《Qt Creator快速入门》，Qt进阶书籍推荐官方的《C++ GUI Qt4编程》，qml书籍推荐《Qt5编程入门》。
-2. 强烈推荐程序员自我修养和规划系列书《大话程序员》《程序员的成长课》《解忧程序员》，受益匪浅，受益终生！
+1. C++入门书籍推荐《C++ primer plus》，进阶书籍推荐《C++ primer》。
+2. Qt入门书籍推荐霍亚飞的《Qt Creator快速入门》，Qt进阶书籍推荐官方的《C++ GUI Qt4编程》，qml书籍推荐《Qt5编程入门》。
+3. 强烈推荐程序员自我修养和规划系列书《大话程序员》《程序员的成长课》《解忧程序员》，受益匪浅，受益终生！
