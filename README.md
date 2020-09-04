@@ -48,7 +48,17 @@ for (int i = 0; i < count; ++i) {
 ```
 
 12. Qt内置图标封装在QStyle中，大概七十多个图标，可以直接拿来用。
-QStyle::SP_TitleBarMenuButton
+``` c++
+SP_TitleBarMenuButton,
+SP_TitleBarMinButton,
+SP_TitleBarMaxButton,
+SP_TitleBarCloseButton,
+SP_MessageBoxInformation,
+SP_MessageBoxWarning,
+SP_MessageBoxCritical,
+SP_MessageBoxQuestion,
+...
+```
 
 13. 根据操作系统位数判断加载
 ``` c++
@@ -100,7 +110,7 @@ timer->inherits("QAbstractButton"); // returns false
 
 23. 如果用了webengine模块，发布程序的时候带上QtWebEngineProcess.exe+translations文件夹+resources文件夹。
 
-24. a.setAttribute(Qt::AA_NativeWindows);可以让每个控件都拥有独立的句柄。
+24. 默认Qt是一个窗体一个句柄，如果要让每个控件都拥有独立的句柄，设置下 a.setAttribute(Qt::AA_NativeWindows);
 
 25. Qt+Android防止程序被关闭。
 ``` c++
@@ -129,7 +139,7 @@ QMainWindow > .QWidget {
 
 29. Qtcreator软件的配置文件存放在：C:\Users\Administrator\AppData\Roaming\QtProject，有时候如果发现出问题了，将这个文件夹删除后打开creator自动重新生成即可。
 
-30. QMediaPlayer依赖本地解码器，WIN上下载k-lite或者LAV Filters安装即可。
+30. QMediaPlayer是个壳，依赖本地解码器，视频这块默认基本上就播放个MP4，如果要支持其他格式需要下载k-lite或者LAV Filters安装即可（WIN上，其他系统上自行搜索）。如果需要做功能强劲的播放器，初学者建议用vlc、mpv，终极大法用ffmpeg。
 
 31. 判断编译器类型、编译器版本、操作系统。
 ``` c++
@@ -210,8 +220,8 @@ contains(QT_ARCH, x86_64) {}
 ``` c++
 void showEvent(QShowEvent *e)
 {
-setAttribute(Qt::WA_Mapped);
-QWidget::showEvent(e);
+    setAttribute(Qt::WA_Mapped);
+    QWidget::showEvent(e);
 }
 ```
 
@@ -709,6 +719,12 @@ path = QDir::toNativeSeparators(path);
 //输出 C:/temp/test.txt
 ```
 
+112. 巧用QMetaObject::invokeMethod方法可以实现很多效果，包括同步和异步执行，比如有个应用场景是在回调中，需要异步调用一个public函数，如果直接调用的话会发现不成功，此时需要使用 QMetaObject::invokeMethod(obj, "fun", Qt::QueuedConnection); 这种方式来就可以。invokeMethod函数有很多重载参数，可以传入返回值和执行方法的参数等。
+
+113. Qt5中的信号是public的，可以在需要的地方直接emit即可，而在Qt4中信号是protected的，不能直接使用，需要定义一个public函数来emit。
+
+114. Qt5.15版本开始官方不再提供安装包，只提供源码，可以自行编译或者在线安装，估计每次编译各种版本太麻烦，更多的是为了统计收集用户使用信息比如通过在线安装，后期可能会逐步加大商业化力度。
+
 ### 二、其他经验
 
 1. Qt界的中文乱码问题，版本众多导致的如何选择安装包问题，如何打包发布程序的问题，堪称Qt界的三座大山！
@@ -721,16 +737,20 @@ path = QDir::toNativeSeparators(path);
 
 5. 如果出现崩溃和段错误，80%都是因为要么越界，要么未初始化，死扣这两点，80%的问题解决了。
 
-6. Qt一共有几百个版本，关于如何选择Qt版本的问题，我一般保留四个版本，为了兼容Qt4用4.8.7，最后的支持XP的版本5.7.0，最新的长期支持版本比如5.12，最高的新版本比如5.14.2。强烈不建议使用5.0到5.3之间的版本，太多bug和坑，稳定性和兼容性相比于之后的版本相当差，能换就换，不能换睡服领导也要换。
+6. Qt一共有几百个版本，关于如何选择Qt版本的问题，我一般保留四个版本，为了兼容Qt4用4.8.7，最后的支持XP的版本5.7.0，最新的长期支持版本比如5.12，最高的新版本比如5.14.2。强烈不建议使用4.7以前和5.0到5.3之间的版本，太多bug和坑，稳定性和兼容性相比于之后的版本相当差，能换就换，不能换睡服领导也要换。
 
-7. 终极秘籍：如果遇到问题搜索Qt方面找不到答案，试着将关键字用JAVA C# android打头，你会发现别有一番天地，其他人很可能做过！
+7. Qt和msvc编译器常见搭配是Qt5.7+VS2013、Qt5.9+VS2015、Qt5.12+VS2017，按照这些搭配来，基本上常用的模块都会有，比如webengine模块，如果选用的Qt5.12+msvc2015，则很可能官方没有编译这个模块，只是编译了Qt5.12+msvc2017的。
 
-8. 最后一条：珍爱生命，远离编程。祝大家头发浓密，睡眠良好，情绪稳定，财富自由！
+8. 终极秘籍：如果遇到问题搜索Qt方面找不到答案，试着将关键字用JAVA C# android打头，你会发现别有一番天地，其他人很可能做过！
+
+9. 新版本Qt安装包安装的时候需要填写注册信息，如果不想填写，先禁用网卡，在运行安装包，可以直接跳过这一步进行安装。
+
+10. 最后一条：珍爱生命，远离编程。祝大家头发浓密，睡眠良好，情绪稳定，财富自由！
 
 ### 三、推荐的Qt论坛+个人博客+网站+群
 | 名称 | 网址 |
 | ------ | ------ |
-|QQ学习群| Qt交流大会群 853086607 Qt技术交流群 46679801 Qt进阶之路群 734623697|
+|QQ学习群|Qt交流大会群 853086607 Qt技术交流群 46679801 Qt进阶之路群 734623697|
 |QtWidget开源demo集合|[https://gitee.com/feiyangqingyun/QWidgetDemo](https://gitee.com/feiyangqingyun/QWidgetDemo)|
 |QtQuick/Qml开源demo集合|[https://gitee.com/jaredtao/TaoQuick](https://gitee.com/jaredtao/TaoQuick)|
 |qtcn|[http://www.qtcn.org](http://www.qtcn.org)|
@@ -756,6 +776,7 @@ path = QDir::toNativeSeparators(path);
 |Qt官方下载地址|[https://download.qt.io](https://download.qt.io)|
 |Qt官方下载新地址|[https://download.qt.io/new_archive/qt/](https://download.qt.io/new_archive/qt/)|
 |Qt国内镜像下载地址|[https://mirrors.cloud.tencent.com/qt](https://mirrors.cloud.tencent.com/qt)|
+|Qt安装包下载地址|[http://qthub.com/download/](http://qthub.com/download/) (超过1000多个，由Qt君整理)|
 |精美图表控件QWT|[http://qwt.sourceforge.net/](http://qwt.sourceforge.net/)|
 |精美图表控件QCustomPlot|[https://www.qcustomplot.com/](https://www.qcustomplot.com/)|
 |免费图标下载|[http://www.easyicon.net/](http://www.easyicon.net/)|
