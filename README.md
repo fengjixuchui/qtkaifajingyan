@@ -725,6 +725,41 @@ path = QDir::toNativeSeparators(path);
 
 114. Qt5.15版本开始官方不再提供安装包，只提供源码，可以自行编译或者在线安装，估计每次编译各种版本太麻烦，更多的是为了统计收集用户使用信息比如通过在线安装，后期可能会逐步加大商业化力度。
 
+115. 有时候我们需要判断当前Qt版本有没有某个模块可以使用qtHaveModule（Qt5新引入的判断）来判断，如果要判断自己的项目中有没有 QT += 的方式添加的模块，可以用 contains来判断。
+```c++
+qtHaveModule(webenginewidgets) {
+message("当前Qt库有找到 webenginewidgets 模块")
+}
+
+!qtHaveModule(webkit) {
+message("当前Qt库没有找到 webkit 模块")
+}
+
+contains(QT, network) {
+message("当前项目已经引入 network 模块")
+}
+
+!contains(QT, widgets) {
+message("当前项目没有引入 widgets 模块")
+}
+```
+
+116. c++11新引入了原始字符串格式，用户避免在字符串中加入转义字符\，可以用于表示json字符串等场景。
+```c++
+QString s1 = R"(test\001.jpg)";
+s1.replace("\\", "#");
+qDebug()<< s1;
+//结果 test#001.jpg
+```
+
+117. 安卓上打印信息建议使用 qInfo() 而不是 qDebug() ，qInfo()才有效果。
+
+118. Qt的默认定时器精度不够高（比如应用场景是1分钟保存一条记录或者文件，当你用默认的定时器的时候你会发现有些时候是60秒而有些是59秒随机的，如果客户有要求这就需要设置精度了。当然我们所做的绝大部分项目也不需要精度非常高的定时器，毕竟精度越高，占用的系统资源可能越大），如果需要设置更高的精度可以设置 setTimerType(Qt::PreciseTimer)。Qt有两种定时器处理，一种是QTimer类，还有一种是QObject类就内置的timeevent事件，如果是QObject类的定时器要设置的话调用 startTimer(interval, Qt::PreciseTimer);
+- Qt::PreciseTimer 精确的定时器，尽量保持毫秒精度。
+- Qt::CoarseTimer 粗略的定时器，尽量保持精度在所需的时间间隔5%范围内。
+- Qt::VeryCoarseTimer 很粗略的定时器，只保留完整的第二精度。
+- 精度再高，也依赖对应的操作系统中断，假设中断需要 5ms，则定时器精度不可能高于5毫秒。
+
 ### 二、其他经验
 
 1. Qt界的中文乱码问题，版本众多导致的如何选择安装包问题，如何打包发布程序的问题，堪称Qt界的三座大山！
