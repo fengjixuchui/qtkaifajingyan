@@ -501,7 +501,7 @@ writer->close();
 91. 数据库处理一般建议在主线程，如果非要在其他线程，务必记得打开数据库也要在那个线程，即在那个线程使用数据库就在那个线程打开，不能打开数据库在主线程，执行sql在子线程，很可能出问题。
 
 92. 新版的QTcpServer类在64位版本的Qt下很可能不会进入incomingConnection函数，那是因为Qt5对应的incomingConnection函数参数变了，由之前的int改成了qintptr，改成qintptr有个好处，在32位上自动是quint32而在64位上自动是quint64，如果在Qt5中继续写的参数是int则在32位上没有问题在64位上才有问题，所以为了兼容Qt4和Qt5，必须按照不一样的参数写。
-```c++
+```cpp
 #if (QT_VERSION > QT_VERSION_CHECK(5,0,0))
     void incomingConnection(qintptr handle);
 #else
@@ -512,7 +512,7 @@ writer->close();
 93. Qt支持所有的界面控件比如QPushButton、QLineEdit自动关联 on_控件名_信号(参数) 信号槽，比如按钮的单击信号 on_pushButton_clicked()，然后直接实现槽函数即可。
 
 94. QWebEngineView控件由于使用了opengl，在某些电脑上可能由于opengl的驱动过低会导致花屏或者各种奇奇怪怪的问题，比如showfullscreen的情况下鼠标右键失效，需要在main函数启用软件opengl渲染。
-```c++
+```cpp
 #if (QT_VERSION > QT_VERSION_CHECK(5,4,0))
     //下面两种方法都可以,Qt默认采用的是AA_UseDesktopOpenGL
     QCoreApplication::setAttribute(Qt::AA_UseOpenGLES);
@@ -521,7 +521,7 @@ writer->close();
     QApplication a(argc, argv);
 ```
 另外一个方法解决 全屏+QWebEngineView控件一起会产生右键菜单无法弹出的bug,需要上移一个像素
-```c++
+```cpp
 QRect rect = qApp->desktop()->geometry();
 rect.setY(-1);
 rect.setHeight(rect.height());
@@ -529,12 +529,12 @@ this->setGeometry(rect);
 ```
 
 95. QStyle内置了很多方法用处很大，比如精确获取滑动条鼠标按下处的值。
-```c++
+```cpp
 QStyle::sliderValueFromPosition(minimum(), maximum(), event->x(), width());
 ```
 
 96. 用QFile读写文件的时候，推荐用QTextStream文件流的方式来读写文件，速度快很多，基本上会有30%的提升，文件越大性能区别越大。
-```c++
+```cpp
 //从文件加载英文属性与中文属性对照表
 QFile file(":/propertyname.txt");
 if (file.open(QFile::ReadOnly)) {
@@ -556,7 +556,7 @@ if (file.open(QFile::ReadOnly)) {
 ```
 
 97. 用QFile.readAll()读取QSS文件默认是ANSI格式，不支持UTF8，如果在QtCreator中打开qss文件来编辑保存，这样很可能导致qss加载以后没有效果。
-```c++
+```cpp
 void frmMain::initStyle()
 {
     //加载样式表
@@ -590,7 +590,7 @@ void frmMain::initStyle()
 ```
 
 98. QString内置了很多转换函数，比如可以调用toDouble转为double数据，但是当你转完并打印的时候你会发现精确少了，只剩下三位了，其实原始数据还是完整的精确度的，只是打印的时候优化成了三位，如果要保证完整的精确度，可以调用 qSetRealNumberPrecision 函数设置精确度位数即可。
-```c++
+```cpp
 QString s1, s2;
 s1 = "666.5567124";
 s2.setNum(888.5632123, 'f', 7);
@@ -598,7 +598,7 @@ qDebug() << qSetRealNumberPrecision(10) << s1.toDouble() << s2.toDouble();
 ```
 
 99. 用QScriptValueIterator解析数据的时候，会发现总是会多一个节点内容，并且内容为空，如果需要跳过则增加一行代码。
-```c++
+```cpp
 while (it.hasNext()) {
     it.next();    
     if (it.flags() & QScriptValue::SkipInEnumeration)      
@@ -614,7 +614,7 @@ while (it.hasNext()) {
 102. 默认程序中获取焦点以后会有虚边框，如果看着觉得碍眼不舒服可以去掉，设置样式即可：setStyleSheet("*{outline:0px;}");
 
 103. Qt表格控件一些常用的设置封装，QTableWidget继承自QTableView，所以下面这个函数支持传入QTableWidget。
-```c++
+```cpp
 void QUIHelper::initTableView(QTableView *tableView, int rowHeight, bool headVisible, bool edit)
 {
     //奇数偶数行颜色交替
@@ -653,7 +653,7 @@ void QUIHelper::initTableView(QTableView *tableView, int rowHeight, bool headVis
 ```
 
 104. 在一些大的项目中，可能嵌套了很多子项目，有时候会遇到子项目依赖其他子项目的时候，比如一部分子项目用来生成动态库，一部分子项目依赖这个动态库进行编译，此时就需要子项目按照顺序编译。
-```c++
+```cpp
 TEMPLATE = subdirs
 #设置ordered参数以后会依次编译 demo designer examples
 CONFIG  += ordered
@@ -680,7 +680,7 @@ SUBDIRS += examples
 |amd64_arm|64位系统上编译在arm系统上运行|
 
 106. 很多时候用QDialog的时候会发现阻塞了消息，而有的时候我们希望是后台的一些消息继续运行不要终止，此时需要做个设置。
-```c++
+```cpp
 QDialog dialog;
 dialog.setWindowModality(Qt::WindowModal);
 ```
@@ -695,7 +695,7 @@ dialog.setWindowModality(Qt::WindowModal);
 - 多线程是需要占用系统资源的，理论上来说，如果线程数量超过了CPU的核心数量，其实多线程调度可能花费的时间更多，各位在使用过程中要权衡利弊；
 
 108. 在嵌入式linux上，如果设置了无边框窗体，而该窗体中又有文本框之类的，发现没法产生焦点进行输入，此时需要主动激活窗体才行。
-```c++
+```cpp
 //这种方式设置的无边框窗体在嵌入式设备上无法产生焦点
 setWindowFlags(Qt::WindowStaysOnTopHint | Qt::FramelessWindowHint | Qt::X11BypassWindowManagerHint);
 
@@ -709,7 +709,7 @@ w->activateWindow();
 110. QGraphicsEffect类的相关效果很炫，可以实现很多效果比如透明、渐变、阴影等，但是该类很耗CPU，如果不是特别需要一般不建议用，就算用也是要用在该部件后期不会发生频繁绘制的场景，不然会让你哭晕在厕所。
 
 111. 在不同的平台上文件路径的斜杠也是不一样的，比如linux系统一般都是 / 斜杠，而在windows上都是 \\ 两个反斜杠，Qt本身程序内部无论在win还是linux都支持 / 斜杠的路径，但是一些第三方库的话可能需要转换成对应系统的路径，这就需要用到斜杠转换，Qt当然内置类方法。
-```c++
+```cpp
 QString path = "C:/temp/test.txt";
 path = QDir::toNativeSeparators(path);
 //输出 C:\\temp\\test.txt
@@ -719,14 +719,35 @@ path = QDir::toNativeSeparators(path);
 //输出 C:/temp/test.txt
 ```
 
-112. 巧用QMetaObject::invokeMethod方法可以实现很多效果，包括同步和异步执行，比如有个应用场景是在回调中，需要异步调用一个public函数，如果直接调用的话会发现不成功，此时需要使用 QMetaObject::invokeMethod(obj, "fun", Qt::QueuedConnection); 这种方式来就可以。invokeMethod函数有很多重载参数，可以传入返回值和执行方法的参数等。
+112. 巧用QMetaObject::invokeMethod方法可以实现很多效果，包括同步和异步执行，很大程度上解决了跨线程处理信号槽的问题。比如有个应用场景是在回调中，需要异步调用一个public函数，如果直接调用的话会发现不成功，此时需要使用 QMetaObject::invokeMethod(obj, "fun", Qt::QueuedConnection); 这种方式来就可以。invokeMethod函数有很多重载参数，可以传入返回值和执行方法的参数等。invokeMethod函数不仅支持槽函数还支持信号，而且这逼居然是线程安全的，可以在线程中放心使用，牛逼！
+```cpp
+//头文件声明信号和槽函数
+signals:
+    void sig_test(int type,double value);
+private slots:
+    void slot_test(int type, double value);
+
+//构造函数关联信号槽
+connect(this, SIGNAL(sig_test(int, double)), this, SLOT(slot_test(int, double)));
+//单击按钮触发信号和槽,这里是同时举例信号槽都可以
+void MainWindow::on_pushButton_clicked()
+{
+    QMetaObject::invokeMethod(this, "sig_test", Q_ARG(int, 66), Q_ARG(double, 66.66));
+    QMetaObject::invokeMethod(this, "slot_test", Q_ARG(int, 88), Q_ARG(double, 88.88));
+}
+//会打印 66 66.66 和 88 88.88
+void MainWindow::slot_test(int type, double value)
+{
+    qDebug() << type << value;
+}
+```
 
 113. Qt5中的信号是public的，可以在需要的地方直接emit即可，而在Qt4中信号是protected的，不能直接使用，需要定义一个public函数来emit。
 
 114. Qt5.15版本开始官方不再提供安装包，只提供源码，可以自行编译或者在线安装，估计每次编译各种版本太麻烦，更多的是为了统计收集用户使用信息比如通过在线安装，后期可能会逐步加大商业化力度。
 
 115. 有时候我们需要判断当前Qt版本有没有某个模块可以使用qtHaveModule（Qt5新引入的判断）来判断，如果要判断自己的项目中有没有 QT += 的方式添加的模块，可以用 contains来判断。
-```c++
+```cpp
 qtHaveModule(webenginewidgets) {
 message("当前Qt库有找到 webenginewidgets 模块")
 }
@@ -745,7 +766,7 @@ message("当前项目没有引入 widgets 模块")
 ```
 
 116. c++11新引入了原始字符串格式，用户避免在字符串中加入转义字符\，可以用于表示json字符串等场景。
-```c++
+```cpp
 QString s1 = R"(test\001.jpg)";
 s1.replace("\\", "#");
 qDebug()<< s1;
@@ -760,6 +781,264 @@ qDebug()<< s1;
 - Qt::VeryCoarseTimer 很粗略的定时器，只保留完整的第二精度。
 - 精度再高，也依赖对应的操作系统中断，假设中断需要 5ms，则定时器精度不可能高于5毫秒。
 
+119. QGraphicsEffect相关类很耗CPU，甚至在绘制的时候和某些地方有冲突干扰，基本上不建议使用，情非得已只建议少量使用和非频繁触发绘制的地方使用。
+
+120. 用QSettings设置注册表，如果不是管理员身份运行会打印 QSettings: failed to set subkey "xxx" (拒绝访问。)，你需要手动鼠标右键管理员身份运行就可以。
+
+121. QLineEdit除了单纯的文本框以外，还可以做很多特殊的处理用途。
+- 限制输入只能输入IP地址。
+- 限制输入范围，强烈推荐使用 QRegExpValidator 正则表达式来处理。
+```cpp
+//正在表达式限制输入
+QString str = "\\b(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\\b";
+ui->lineEdit->setValidator(new QRegExpValidator(QRegExp(str)));
+//用于占位
+ui->lineEdit->setInputMask("000.000.000.000");
+
+#if 0
+//下面代码设置浮点数范围限制失败
+ui->lineEdit->setValidator(new QDoubleValidator(20, 50, 1));
+#else
+//下面代码设置浮点数范围限制成功
+QDoubleValidator *validator = new QDoubleValidator(20, 50, 1);
+validator->setNotation(QDoubleValidator::StandardNotation);
+ui->lineEdit->setValidator(validator);
+#endif
+//下面代码设置整数范围限制成功
+ui->lineEdit->setValidator(new QIntValidator(10, 120));
+
+//其实上面的代码缺陷很多，只能限制只输入小数，无法设定数值范围，很操蛋
+//需要来个万能的牛逼的 QRegExpValidator
+
+//限制浮点数输入范围为[-180,180]
+QRegExp regexp("^-?(180|1?[0-7]?\\d(\\.\\d+)?)$");
+//限制浮点数输入范围为[-90,90]并限定为小数位后4位
+QRegExp regexp("^-?(90|[1-8]?\\d(\\.\\d{1,4})?)$");
+QRegExpValidator *validator = new QRegExpValidator(regexp, this);
+ui->lineEdit->setValidator(validator);
+```
+
+122. 在继承自QAbstractItemView的控件中，比如QTableView、QTableWidget，如果文本超过对应item的宽度，则会自动省略号显示，想要快速显示完整的文本，可以在该列和下一列分割线中间双击即可，会自动自适应显示最大宽度，如果是Qt5.14或者更高版本，你会发现显示省略号的计算规则变了，如果是rtsp、http之类的开头的英文字符串，同样的列宽下，会提前就显示省略号，比如字符串 rtmp://58.200.131.2:1935/livetv/cctv1，会显示成 rtmp://...  ，而在旧版本的Qt中会显示成 rtmp://58.200.131... ，很多时候我们并不想看到烦人的省略号，可以设置取消。
+```cpp
+//取消自动换行
+tableView->setWordWrap(false);
+//超出文本不显示省略号
+tableView->setTextElideMode(Qt::ElideNone);
+```
+
+123. QVideoWidget播放视频，可能会遇到画面闪烁的情况，播放视频的窗体需要设置个属性。
+```cpp
+QVideoWidget *videoWidget = new QVideoWidget;
+videoWidget->setAttribute(Qt::WA_OpaquePaintEvent);
+```
+
+123. Qt bug成千上万，这个不用大惊小怪，也基本上遇不到，大部分都是特殊极端情况特定应用场景出现，甚至你会遇到有些是debug可以release报错，有些release可以debug却报错的情况，最神奇的还有先是debug报错，然后release正常，再返回去用debug又正常，需要用release激活一下！学习编程的路本来就是一条坑坑洼洼的路，不断填坑，尽量规避坑！很多时候很多看起来的坑其实是自己没有注意细节导致的。
+
+124. Qt试图中默认排序是按照字符串的ASCII排序的，如果是IP地址的话会出现192.168.1.117排在192.168.1.2前面的情况，如果要规避这种情况，一种做法是取末尾的地址转成整型再比较大小，缺点是跨网段就歇菜了，又会出现192.168.2.65出现在192.168.1.70前面，终极大法是将IP地址转成整型再比较大小。
+```cpp
+QString QUIHelper::ipv4IntToString(quint32 ip)
+{
+    QString result = QString("%1.%2.%3.%4").arg((ip >> 24) & 0xFF).arg((ip >> 16) & 0xFF).arg((ip >> 8) & 0xFF).arg(ip & 0xFF);
+    return result;
+}
+
+quint32 QUIHelper::ipv4StringToInt(const QString &ip)
+{
+    int result = 0;
+    if (isIP(ip)) {
+        QStringList list = ip.split(".");
+        int ip0 = list.at(0).toInt();
+        int ip1 = list.at(1).toInt();
+        int ip2 = list.at(2).toInt();
+        int ip3 = list.at(3).toInt();
+        result = ip3 | ip2 << 8 | ip1 << 16 | ip0 << 24;
+    }
+    return result;
+}
+```
+
+125. 在主QWidget窗体如果直接qss设置背景图片的话，预览是可见的，运行并没有效果，你需要在这个主widget上再放个widget，在新的widget上设置qss图片就行，而如果是Dialog或者QMainWindow窗体是支持直接设置qss背景图的，预览和运行效果一致。
+
+126. Qt提供了qDebug机制直接输出打印信息，这个大大弥补了QtCreator调试很鸡肋的缺点，而且无缝对接日志钩子，使得现场运行期间按照预定的打印信息输出到日志文件，有时候在开发阶段，又不想要看到一堆堆的打印信息，最笨的做法是一行行注释掉qdebug的地方，其实还可以直接pro中加上一行来禁用整个项目的qdebug输出。
+```cpp
+#禁用qdebug打印输出
+DEFINES += QT_NO_DEBUG_OUTPUT
+```
+
+127. 在使用QT_NO_DEBUG_OUTPUT关键字禁用了所有打印信息以后，可以节约不少的开销，有时候又想在禁用打印信息后，极少地方还需要看到打印信息，怎么办呢？其实QT_NO_DEBUG_OUTPUT禁用的qdebug的输出，Qt还有其他几种打印信息比如 qInfo、qWarning、qCritical，这些是不受影响的，也就是说在极少部分需要打印的地方用qInfo来输出信息就好。特别注意：qFatal打印完信息程序会自动结束。
+```cpp
+qDebug() << "qDebug";
+qInfo() << "qInfo";
+qWarning() << "qWarning";
+qCritical() << "qCritical";
+
+qDebug("qDebug");
+qWarning("qWarning");
+qCritical("qCritical");
+```
+
+128. Qt的pro文件可以添加各种处理来使得配置更方便，比如指定输出文件路径等，这样就不会全部在一堆编译生成的临时文件中找来找去。
+```cpp
+#禁用qdebug打印输出
+DEFINES     += QT_NO_DEBUG_OUTPUT
+
+#自定义define变量 可以在整个项目中使用
+#pro文件可以这样判断 contains(DEFINES, videovlc) {}
+#代码文件可以这样判断 #ifdef videovlc
+DEFINES     += videovlc1 videoffmpeg
+
+#关闭编译警告提示 眼不见为净
+CONFIG      += warn_off
+
+#指定编译生成的文件到temp目录 分门别类存储
+MOC_DIR     = temp/moc
+RCC_DIR     = temp/rcc
+UI_DIR      = temp/ui
+OBJECTS_DIR = temp/obj
+
+#指定编译生成的可执行文件到bin目录
+DESTDIR     = bin
+```
+
+129. Qt对操作系统层的消息也做了很多的封装，可以直接拿到进行处理（如果需要拦截处理要用对应操作系统的API才行比如鼠标键盘钩子），比如系统休眠和唤醒做一些处理。
+```cpp
+//主窗体头文件
+protected:
+    bool nativeEvent(const QByteArray &eventType, void *message, long *result);
+#ifdef Q_OS_WIN
+    bool winEvent(MSG *message, long *result);
+#endif
+
+//主窗体实现函数
+#ifdef Q_OS_WIN
+#include "Windows.h"
+#endif
+
+bool frmMain::nativeEvent(const QByteArray &eventType, void *message, long *result)
+{
+    if (eventType == "windows_generic_MSG") {
+#ifdef Q_OS_WIN
+        MSG *msg = static_cast<MSG *>(message);
+        //qDebug() << TIMEMS << msg->message;
+        if (msg->wParam == PBT_APMSUSPEND && msg->message == WM_POWERBROADCAST) {
+            //系统休眠的时候自动最小化可以规避程序可能出现的问题
+            this->showMinimized();
+        } else if (msg->wParam == PBT_APMRESUMEAUTOMATIC) {
+            //休眠唤醒后自动打开
+            this->showNormal();
+        }
+#endif
+    } else if (eventType == "NSEvent") {
+#ifdef Q_OS_MACOS
+#endif
+    }
+    return false;
+}
+
+#ifdef Q_OS_WIN
+bool frmMain::winEvent(MSG *message, long *result)
+{
+    return nativeEvent("windows_generic_MSG", message, result);
+}
+#endif
+```
+
+130. Qt的pro项目管理配置文件中也可添加各种编译前后的操作及配置，主要通过 QMAKE_POST_LINK和QMAKE_PRE_LINK，他们支持的函数以及写法，可以在QtCreator的帮助中搜索 qmake Function Reference 查看详情说明。
+- QMAKE_PRE_LINK    表示编译前执行内容
+- QMAKE_POST_LINK   表示编译后执行内容
+```cpp
+srcFile1 = $$PWD/1.txt
+srcFile2 = $$PWD/2.txt
+dstDir = $$PWD/../bin
+#windows上需要转换路径斜杠 其他系统不需要
+srcFile1 = $$replace(srcFile1, /, \\);
+srcFile2 = $$replace(srcFile2, /, \\);
+dstDir = $$replace(dstDir, /, \\);
+
+#编译前执行拷贝 多个拷贝可以通过 && 符号隔开
+QMAKE_PRE_LINK += copy /Y $$srcFile1 $$dstDir && copy /Y $$srcFile2 $$dstDir
+#编译后执行拷贝 多个拷贝可以通过 && 符号隔开
+QMAKE_POST_LINK += copy /Y $$srcFile1 $$dstDir && copy /Y $$srcFile2 $$dstDir
+```
+
+131. Qt新版本往往会带来一些头文件的更新，比如以前使用QPainter绘制，不需要额外包含QPainterPath头文件，而5.15版本开始就需要显示主动引入#include "qpainterpath.h"才行。
+
+132. Qt6.0发布了，是个比较大的改动版本，很多基础的类或者组件都放到单独的源码包中，需要自行官网下载并编译，默认不提供集成在开发目录下，需要手动编译并集成，比如QRegExp，QTextCodec类，需要编译集成后pro文件 QT += core5compat 才能用， 具体说明在https://doc.qt.io/qt-6/qtcore5-index.html。
+
+133. qDebug输出打印信息，默认会完整打印转义字符，例如：\\  \" \t \n" 等，所以当你发现你明明设置了转义字符以后打印确还是转义前的字符，这就懵逼了，其实这是qdebug为了方便调试将各种字符都打印输出。无可否认，很多时候，我们极其兴奋的享受着Qt带来的各种轮子各种便利，但是偶尔，稍不留意，这些便利可能也会坑你一把。要做的就是擦亮眼睛，时刻谨慎，一步一个脚印踏踏实实码代码。
+```cpp
+QString s1 = R"(\:device0)";
+//TNND居然输出的是 \\:device0
+qDebug() << s1;
+//这次终于正确的输出 \:device0
+qDebug().noquote() << s1;
+```
+
+134. 很多人有疑问为何qss对浏览器控件中的网页样式没法控制，其实用屁股想想也知道，那玩意是html css去控制的，和Qt一毛钱关系也没有，根本管不着，如果想要对滚动条样式设置，可以在网页代码中设置样式就行。
+```cpp
+<style type="text/css">
+  ::-webkit-scrollbar{width:0.8em;}
+  ::-webkit-scrollbar-track{background:rgb(241,241,241);}
+  ::-webkit-scrollbar-thumb{background:rgb(188,188,188);}
+</style>
+```
+
+135. Qt的ini配置文件默认不支持直接读写中文，需要手动设置下编码格式才行，强烈建议统一用utf-8编码，包括代码文件。
+```cpp
+//设置了编码以后配置文件内容为 Company=上海物联网技术研究中心
+//没有设置编码则配置文件内容为 Company=\xe4\xb8\x8a\xe6\xb5\xb7\xe7\x89\xa9\xe8\x81\x94\xe7\xbd\x91\xe6\x8a\x80\xe6\x9c\xaf\xe7\xa0\x94\xe7\xa9\xb6\xe4\xb8\xad\xe5\xbf\x83
+void App::readConfig()
+{
+    QSettings set(App::ConfigFile, QSettings::IniFormat);
+    set.setIniCodec("utf-8");
+
+    set.beginGroup("AppConfig1");
+    App::Company = set.value("Company", App::Company).toString();
+    set.endGroup();
+}
+void App::writeConfig()
+{
+    QSettings set(App::ConfigFile, QSettings::IniFormat);
+    set.setIniCodec("utf-8");
+
+    set.beginGroup("AppConfig1");
+    set.setValue("Company", App::Company);
+    set.endGroup();
+}
+```
+
+136. 用Qt做安卓开发都会遇到权限的问题，早期的安卓版本可以直接通过 AndroidManifest.xml 配置文件来添加需要的权限，这样在安装app的时候就会提示该app需要哪些权限让用户同意，现在的安卓版本都改成了动态权限，需要在app运行的时候弹出提示让用户确认再有权限，Qt迎合了这种策略内置了动态申请权限的方法 QtAndroid::requestPermissionsSync。
+```cpp
+//动态设置权限
+bool checkPermission(const QString &permission)
+{
+#ifdef Q_OS_ANDROID
+#if (QT_VERSION >= QT_VERSION_CHECK(5, 10, 0))
+    QtAndroid::PermissionResult result = QtAndroid::checkPermission(permission);
+    if (result == QtAndroid::PermissionResult::Denied) {
+        QtAndroid::requestPermissionsSync(QStringList() << permission);
+        result = QtAndroid::checkPermission(permission);
+        if (result == QtAndroid::PermissionResult::Denied) {
+            return false;
+        }
+    }
+#endif
+#endif
+    return true;
+}
+
+int main(int argc, char *argv[])
+{
+    QApplication a(argc, argv);
+   
+    //请求权限
+    checkPermission("android.permission.READ_EXTERNAL_STORAGE");
+    checkPermission("android.permission.WRITE_EXTERNAL_STORAGE");   
+
+    return a.exec();
+}
+```
+
 ### 二、其他经验
 
 1. Qt界的中文乱码问题，版本众多导致的如何选择安装包问题，如何打包发布程序的问题，堪称Qt界的三座大山！
@@ -772,15 +1051,23 @@ qDebug()<< s1;
 
 5. 如果出现崩溃和段错误，80%都是因为要么越界，要么未初始化，死扣这两点，80%的问题解决了。
 
-6. Qt一共有几百个版本，关于如何选择Qt版本的问题，我一般保留四个版本，为了兼容Qt4用4.8.7，最后的支持XP的版本5.7.0，最新的长期支持版本比如5.12，最高的新版本比如5.14.2。强烈不建议使用4.7以前和5.0到5.3之间的版本，太多bug和坑，稳定性和兼容性相比于之后的版本相当差，能换就换，不能换睡服领导也要换。
+6. Qt一共有几百个版本，关于如何选择Qt版本的问题，我一般保留四个版本，为了兼容Qt4用4.8.7，最后的支持XP的版本5.7.0，最新的长期支持版本比如5.15，最高的新版本比如5.15.2。强烈不建议使用4.7以前和5.0到5.3之间的版本，太多bug和坑，稳定性和兼容性相比于之后的版本相当差，能换就换，不能换睡服领导也要换。
 
 7. Qt和msvc编译器常见搭配是Qt5.7+VS2013、Qt5.9+VS2015、Qt5.12+VS2017，按照这些搭配来，基本上常用的模块都会有，比如webengine模块，如果选用的Qt5.12+msvc2015，则很可能官方没有编译这个模块，只是编译了Qt5.12+msvc2017的。
 
-8. 终极秘籍：如果遇到问题搜索Qt方面找不到答案，试着将关键字用JAVA C# android打头，你会发现别有一番天地，其他人很可能做过！
+8. Qt默认有对应VS版本，在下载对应VS插件的时候心里要有个数，官方默认提供的是原配的插件，如果想要Qt4.8+VS2015的插件，需要自行编译。一般来说是Qt4.8原配VS2010，Qt5.6原配VS2013，Qt5.9原配VS2015，Qt5.12原配VS2017，切记：原配最好。
 
 9. 新版本Qt安装包安装的时候需要填写注册信息，如果不想填写，先禁用网卡，在运行安装包，可以直接跳过这一步进行安装。
 
-10. 最后一条：珍爱生命，远离编程。祝大家头发浓密，睡眠良好，情绪稳定，财富自由！
+10. 终极秘籍：如果遇到问题搜索Qt方面找不到答案，试着将关键字用JAVA C# android打头，你会发现别有一番天地，其他人很可能做过！
+
+11. 如果Qt能从下面几个方面努力，相信会更有发展前景。
+- QWidget支持CSS3，具有诸多的牛逼的效果，目前支持的是CSS2。
+- QWidget支持GPU绘制，可选切换CPU或者GPU，大大提升绘制效率，利用现在强大的硬件。
+- Qml无缝支持js，可以利用现在各种js轮子，指数级提升qml的项目范围。
+- 支持将程序转成web运行，比如转成cgi之类的程序，目前Qt for WebAssembly很鸡肋，功能极其有限，首次加载速度超慢，大部分Qt类还不支持。
+
+12. 最后一条：珍爱生命，远离编程。祝大家头发浓密，睡眠良好，情绪稳定，财富自由！
 
 ### 三、推荐的Qt论坛+个人博客+网站+群
 | 名称 | 网址 |
